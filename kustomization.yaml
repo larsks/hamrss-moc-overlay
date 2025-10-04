@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: lars-sandbox
+resources:
+  - ../manifests/
+  - ingress.yaml
+  - password-generator.yaml
+  - generate-password-job.yaml
+  - miniflux
+
+secretGenerator:
+  - name: hamrss-publisher-htpasswd
+    files:
+      - secrets/htpasswd
+  - name: hamrss-secrets
+    envs:
+      - secrets/hamrss-secrets.env
+
+configMapGenerator:
+  - name: hamrss-config
+    behavior: merge
+    literals:
+      - MINIFLUX_DB_USER=miniflux
+      - MINIFLUX_DB_NAME=miniflux
+
+patches:
+  - target:
+      kind: Deployment
+      name: hamrss-publisher
+    patch: |
+      - op: remove
+        path: /spec/template/spec/containers/0/ports
+  - path: patches/hamrss-add-auth.yaml
+
+images:
+  - name: cli
+    newName: image-registry.openshift-image-registry.svc:5000/openshift/cli
+    newTag: latest

@@ -1,0 +1,23 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hamrss-publisher
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-production-http01"
+spec:
+  tls:
+    - hosts:
+        - hamrss.oddbit.com
+      secretName: hamrss-tls
+  rules:
+    - host: hamrss.oddbit.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hamrss-publisher
+                port:
+                  number: 8080

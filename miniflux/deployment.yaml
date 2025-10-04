@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: miniflux
+  name: miniflux
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: miniflux
+  template:
+    metadata:
+      labels:
+        component: miniflux
+    spec:
+      initContainers:
+        - name: initialize-miniflux-db
+          image: postgres
+          envFrom:
+            - configMapRef:
+                name: hamrss-config
+            - secretRef:
+                name: hamrss-secrets
+            - secretRef:
+                name: miniflux-secrets
+          command:
+            - bash
+            - -c
+            - |
+              export PGPASSWORD="$POSTGRES_PASSWORD"
+              psql -h postgres -U "$POSTGRES_USER" "$POSTGRES_DB" <<EOSQL
+              -- create user if not exists
+              DO \$\$
+              BEGIN
+                  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '$MINIFLUX_DB_USER') THEN
+                      CREATE ROLE $MINIFLUX_DB_USER WITH LOGIN PASSWORD '$MINIFLUX_DB_PASSWORD';
+                      -- Add any other desired role attributes here, e.g., CREATEDB, SUPERUSER
+                  END IF;
+              END
+              \$\$;
+
+              -- create database if not exists
+              SELECT 'CREATE DATABASE $MINIFLUX_DB_NAME WITH OWNER $MINIFLUX_DB_USER'
+              WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$MINIFLUX_DB_NAME')\gexec
+              EOSQL
+      containers:
+        - name: miniflux
+          image: docker.io/miniflux/miniflux:latest
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: miniflux-secrets
+                  key: MINIFLUX_DB_URL
+            - name: AUTH_PROXY_HEADER
+              value: Remote-User
+            - name: AUTH_PROXY_USER_CREATION
+              value: "1"
+            - name: BASE_URL
+              value: http://miniflux:8080/miniflux/
+            - name: DISABLE_LOCAL_AUTH
+              value: "1"
+            - name: RUN_MIGRATIONS
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8080
+      restartPolicy: Always
