@@ -3,8 +3,12 @@ kind: Kustomization
 labels:
   - includeSelectors: true
     pairs:
-      component: miniflux
-
+      component: nginx
 resources:
   - deployment.yaml
   - service.yaml
+
+configMapGenerator:
+  - name: hamrss-nginx-config
+    files:
+      - files/default.conf

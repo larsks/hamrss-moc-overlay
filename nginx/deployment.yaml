@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hamrss-nginx
+spec:
+  template:
+    spec:
+      volumes:
+        - name: htpasswd
+          secret:
+            secretName: hamrss-htpasswd
+        - name: nginx-config
+          configMap:
+            name: hamrss-nginx-config
+      containers:
+        - name: nginx
+          volumeMounts:
+            - name: htpasswd
+              mountPath: /auth
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+          image: nginx
+          ports:
+            - name: http
+              containerPort: 8080

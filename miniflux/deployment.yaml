@@ -1,18 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    component: miniflux
   name: miniflux
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      component: miniflux
   template:
-    metadata:
-      labels:
-        component: miniflux
     spec:
       initContainers:
         - name: initialize-miniflux-db
