@@ -28,6 +28,7 @@ configMapGenerator:
     literals:
       - MINIFLUX_DB_USER=miniflux
       - MINIFLUX_DB_NAME=miniflux
+      - HAMRSS_IMPORTER_ENABLED_DRIVERS=hamrss.driver.qth,hamrss.driver.qrz
 
 images:
   - name: cli
